@@ -2,8 +2,8 @@ import cv2 #for reading image
 import numpy as np
 import math
 import matplotlib.pyplot as plt # for comparing input and output side by side
-image = cv2.imread('demo-LRImage.png')
-
+# image = cv2.imread('demo-LRImage.png')
+image = cv2.imread('image2.png')
 # to view the imported image
 # cv2.imshow('image',lrImage)
 # to show the output until you press a key (if you dont put this the output is shown very fast and close)
@@ -23,10 +23,10 @@ else:
     channels = 1
 
 # scaling factor
-scaling_factor =4
+scaling_factor =3
 # new dimensions
 new_height = height*scaling_factor
-new_width = height*scaling_factor
+new_width = width*scaling_factor
 
 # empty output image array
 outputImg = np.zeros((new_height,new_width,channels),dtype=np.uint8)
@@ -42,7 +42,7 @@ for y in range(new_height):
         outputImg[y,x] = orgPixelValue
 
 cv2.imshow('Original Image',image)
-cv2.imshow('Resized Image',outputImg)
+cv2.imshow('Nearest Neighbor',outputImg)
 # cv2.waitKey(0)
 
 # matplotlib expects rgb scheme, where as in cv2 it is bgr scheme
