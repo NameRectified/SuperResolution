@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 import math
 
-image = cv2.imread('demo-LRImage.png')
-
+# image = cv2.imread('demo-LRImage.png')
+image = cv2.imread('image2.png')
 height,width = image.shape[0:2]
 if (len(image.shape)==3):
     channels = 3
@@ -46,8 +46,9 @@ for y in range(new_height):
 
         # interpolating along y axis
         I_final = I_top * (1-d_y) + I_bottom*d_y
+        # print(I_final)
         outputImage[y,x] = I_final
 
 cv2.imshow('Original Image',image)
-cv2.imshow('Resized Image',outputImage)
+cv2.imshow('Bilinear',outputImage)
 cv2.waitKey(0)

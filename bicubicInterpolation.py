@@ -1,46 +1,45 @@
 import cv2
 import numpy as np
-import math
 
-image = cv2.imread('demo-LRImage.png')
-# cv2.imshow('image',image)
-# cv2.waitKey(0)
+def cubic_interpolate(p, x):
+    return p[1] + 0.5 * x * (p[2] - p[0] + x * (2.0 * p[0] - 5.0 * p[1] + 4.0 * p[2] - p[3] + x * (3.0 * (p[1] - p[2]) + p[3] - p[0])))
 
-height,width = image.shape[0:2]
-if (len(image.shape)==3):
-    channels = 3
-else:
-    channels = 1
+def bicubic_interpolate(p, x, y):
+    arr = np.zeros(4)
+    for i in range(4):
+        arr[i] = cubic_interpolate(p[i], x)
+    return cubic_interpolate(arr, y)
 
-scaling_factor = 2
-new_height = height*scaling_factor
-new_width = width*scaling_factor
+image = cv2.imread('image2.png')
+height, width = image.shape[:2]
+scaling_factor = 3
+new_height = height * scaling_factor
+new_width = width * scaling_factor
 
-output_image = np.zeros((new_height,new_width,channels),dtype=np.uint8)
+output_image = np.zeros((new_height, new_width, 3), dtype=np.uint8)
 
 for y in range(new_height):
     for x in range(new_width):
-        # print(x,y)
-        x_orig = x/scaling_factor
-        y_orig = y/scaling_factor
+        x_orig = x / scaling_factor
+        y_orig = y / scaling_factor
 
-        x_one = x_orig-1
-        x_one = max(x_one,0)
-        x_two = x_orig
-        x_three = x_orig+1
-        x_four = x_orig+2
-        x_four = min(x_four,width-1)
-        y_one = y_orig-1
-        y_one = max(y_one,0)
-        y_two = y_orig
-        y_three = y_orig+1
-        y_four = y_orig+2
-        y_four = min(y_four,height-1 )
+        x_int = int(x_orig)
+        y_int = int(y_orig)
 
-        neighbors = [[image[y_one, x_one], image[y_one, x_two], image[y_one, x_three], image[y_one, x_four]],
-    [image[y_two, x_one], image[y_two, x_two], image[y_two, x_three], image[y_two, x_four]],
-    [image[y_three, x_one], image[y_three, x_two], image[y_three, x_three], image[y_three, x_four]],
-    [image[y_four, x_one], image[y_four, x_two], image[y_four, x_three], image[y_four, x_four]]
-]
-        d_x = x_orig - x_two
-        d_y = y_orig -y_two
+        x_diff = x_orig - x_int
+        y_diff = y_orig - y_int
+
+        neighbors = np.zeros((4, 4, 3), dtype=np.float32)
+        for m in range(-1, 3):
+            for n in range(-1, 3):
+                xm = min(max(x_int + m, 0), width - 1)
+                yn = min(max(y_int + n, 0), height - 1)
+                neighbors[m + 1, n + 1] = image[yn, xm]
+
+        for c in range(3):
+            output_image[y, x, c] = np.clip(bicubic_interpolate(neighbors[:, :, c], x_diff, y_diff), 0, 255)
+
+cv2.imshow('Original Image', image)
+cv2.imshow('Bicubic Interpolation', output_image)
+cv2.waitKey(0)
+# cv2.destroyAllWindows()
