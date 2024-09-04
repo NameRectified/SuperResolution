@@ -2,12 +2,14 @@ import cv2
 import os
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential # Sequential class is used to build a linear stack of layers
+#Conv2D is  a 2d convolution layer that performs convolution operation on 2d input data such as images.
 from tensorflow.keras.layers import Conv2D
-from skimage.metrics import peak_signal_noise_ratio as psnr, structural_similarity as ssim
+from skimage.metrics import peak_signal_noise_ratio as psnr, structural_similarity as ssim # for importing evaluation metrics
 
-# Define paths
+# Defining paths to training data
 bsd_100_path = r'E:\semester2\research\basics\BSD100'
+# a dictionary containing the scale of the images present in the folder and the folder locations
 hr_paths = {
     '2x': os.path.join(bsd_100_path, 'image_SRF_2'),
     '3x': os.path.join(bsd_100_path, 'image_SRF_3'),
@@ -15,44 +17,45 @@ hr_paths = {
 }
 train_hr_path = r'E:\semester2\research\basics\train\HR'
 train_lr_path = r'E:\semester2\research\basics\train\LR'
-# test_image_path = r'E:\semester2\research\basics\train\HR\test_image.jpg'
 
-# Test if a sample image can be read
-# test_image = cv2.imread(test_image_path)
-# if test_image is None:
-#     print(f"Test failed: Could not read image {test_image_path}.")
-# else:
-#     print("Test succeeded: Image read successfully.")
-
-# Function to downscale high-resolution images to create low-resolution versions
+# function that  downscales images from the HR folder and saves them to LR folder
 def downscale_images(hr_folder, lr_folder, scale_factor):
+    # if the lr folder does not exist on the systeam it is created
     if not os.path.exists(lr_folder):
         os.makedirs(lr_folder)
 
+    # for each image in the hr_folder
     for image in os.listdir(hr_folder):
+        # complete path to each iterated image
         hr_image_path = os.path.join(hr_folder, image)
         lr_image_path = os.path.join(lr_folder, image)
-
+        # reading image using cv2
         hr_image = cv2.imread(hr_image_path)
         if hr_image is None:
-            continue  # Skip if image cannot be read
+            continue  # Skips if the current image cannot be read
 
-        new_width = hr_image.shape[1] // scale_factor
-        new_height = hr_image.shape[0] // scale_factor
+        new_width = hr_image.shape[1] // scale_factor # dividing the width of the hr image with the scale factor
+        new_height = hr_image.shape[0] // scale_factor # dividingg the height of the hr image with the scale factor
 
-        # Resize the high-resolution image to create a low-resolution version
+        # Resizing the high-resolution image to create a low-resolution version
+        # we are using bicubic interpolation
         lr_image = cv2.resize(hr_image, (new_width, new_height), interpolation=cv2.INTER_CUBIC)
+        # saving the new downscaled image to lr folder
         cv2.imwrite(lr_image_path, lr_image)
 
-# Process images for each scaling factor
+# Processing images for each scaling factor
 for scale, hr_folder in hr_paths.items():
+    # we are trying to get only the number like from '2x' we just want 2 and then converting it into an integer
     scale_factor = int(scale[0])
+    # creating a low resolution image folder for each of the scale factors
     lr_folder = os.path.join(train_lr_path, f'image_SRF_{scale_factor}')
+    # calling the downscale_images function for each of the scale factors
     downscale_images(hr_folder, lr_folder, scale_factor)
 
 # Function to build the SRCNN model
 def build_srcnn_model(input_shape):
-    model = Sequential()
+    model = Sequential() # Empty sequential model
+    # we add layers to the sequential model using .add
     model.add(Conv2D(filters=64, kernel_size=9, padding='same', activation='relu', input_shape=input_shape))
     model.add(Conv2D(filters=32, kernel_size=1, padding='same', activation='relu'))
     model.add(Conv2D(filters=1, kernel_size=5, padding='same'))
