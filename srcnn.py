@@ -56,27 +56,36 @@ for scale, hr_folder in hr_paths.items():
 def build_srcnn_model(input_shape):
     model = Sequential() # Empty sequential model
     # we add layers to the sequential model using .add
+    # first conv layer has 64 filters and a kernel size of 9x9 with ReLU activation and same padding
+    # same padding ensures that the output has the same width and height as the input
     model.add(Conv2D(filters=64, kernel_size=9, padding='same', activation='relu', input_shape=input_shape))
+    # a smaller kernel size for layer 2 (1x1) with ReLU activation and 32 filters
     model.add(Conv2D(filters=32, kernel_size=1, padding='same', activation='relu'))
+
     model.add(Conv2D(filters=1, kernel_size=5, padding='same'))
     return model
 
-# Build and compile the SRCNN model
+# calling the function to build the model
+# the third argument shows that it can accept only images with one channel (grayscale)and remaining arguments show that any width and height is acceptable
 model = build_srcnn_model((None, None, 1))  # Assuming grayscale images
+# compiles the model with adam optimizer and MSE as the loss function
 model.compile(optimizer='adam', loss='mean_squared_error')
+
+
+# we are doing this because we want to find the smalled height and width among all images. This will be useful in ensuring that all images in the training have consistent dimensions which are required for training the model.
 
 # Function to find the smallest dimensions of all images
 def find_min_dimensions(hr_folder, lr_folder):
-    min_width, min_height = float('inf'), float('inf')
-
+    min_width, min_height = float('inf'), float('inf') # minimum width and height are initialized to infinity
+    # iterating through all hr images in hr folder
     for image_name in os.listdir(hr_folder):
         hr_image_path = os.path.join(hr_folder, image_name)
-        hr_image = cv2.imread(hr_image_path, cv2.IMREAD_GRAYSCALE)
+        hr_image = cv2.imread(hr_image_path, cv2.IMREAD_GRAYSCALE) # reading image in grayscale
         if hr_image is None:
-            continue
+            continue # skipping images that cannot be read
 
-        min_width = min(min_width, hr_image.shape[1])
-        min_height = min(min_height, hr_image.shape[0])
+        min_width = min(min_width, hr_image.shape[1]) # updating minimum width
+        min_height = min(min_height, hr_image.shape[0]) # updating maximum width
 
     return min_width, min_height
 
@@ -85,7 +94,7 @@ def load_data(hr_folder, lr_folder):
     hr_images = []
     lr_images = []
 
-    # Determine the minimum dimensions to resize all images to
+    # Determining the minimum dimensions to resize all images to
     min_width, min_height = find_min_dimensions(hr_folder, lr_folder)
 
     for image_name in os.listdir(hr_folder):
@@ -144,13 +153,13 @@ def generate_sr_image(lr_image_path, model):
     return sr_image
 
 # Test the model on a sample low-resolution image
-test_lr_image_path = r'E:\semester2\research\basics\train\LR\test_image.jpg'  # Change this to the actual LR image path
+test_lr_image_path = r'E:\semester2\research\basics\image2.png'
 sr_image = generate_sr_image(test_lr_image_path, model)
 cv2.imwrite('sr_test_image.jpg', sr_image)
 
 # Calculate PSNR and SSIM for the generated image
 # Load the corresponding high-resolution image
-hr_image = cv2.imread(test_image_path, cv2.IMREAD_GRAYSCALE)
+hr_image = cv2.imread(test_lr_image_path, cv2.IMREAD_GRAYSCALE)
 if hr_image is not None:
     psnr_value = psnr(hr_image, sr_image)
     ssim_value = ssim(hr_image, sr_image, data_range=hr_image.max() - hr_image.min())
@@ -158,4 +167,4 @@ if hr_image is not None:
     print(f"PSNR: {psnr_value}")
     print(f"SSIM: {ssim_value}")
 else:
-    print(f"Could not read the high-resolution image at {test_image_path}.")
+    print(f"Could not read the high-resolution image at {test_lr_image_path}.")
